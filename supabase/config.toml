@@ -1,0 +1,77 @@
+project_id = "mpesa-track"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+
+[studio]
+enabled = true
+port = 54323
+
+[auth]
+enabled = true
+site_url = "http://localhost:5173"
+additional_redirect_urls = ["http://localhost:5173"]
+jwt_expiry = 3600
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = false
+
+[auth.external.google]
+enabled = false
+client_id = ""
+secret = ""
+
+[functions.loan-ledger]
+verify_jwt = true
+
+[functions.jarvis-chat]
+verify_jwt = true
+
+[functions.jarvis-act]
+verify_jwt = true
+
+[functions.jarvis-speak]
+verify_jwt = true
+
+[functions.usage-stats]
+verify_jwt = true
+
+[functions.parse-mpesa]
+verify_jwt = true
+
+[functions.check-budget-threshold]
+verify_jwt = true
+
+[functions.ladder-reminders]
+verify_jwt = true
+
+# Called by Postgres triggers / pg_cron with the x-mpesatrack-secret header.
+[functions.send-confirmation-email]
+verify_jwt = false
+
+[functions.daily-report]
+verify_jwt = false
+
+[functions.monthly-report]
+verify_jwt = false
+
+# Public forgot-password / verification endpoints; Resend sends the email.
+[functions.request-password-reset]
+verify_jwt = false
+
+[functions.verify-secondary-email]
+verify_jwt = false
+
+# Signed-in users manage their own verified backup address.
+[functions.set-secondary-email]
+verify_jwt = true

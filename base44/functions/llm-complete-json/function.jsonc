@@ -1,0 +1,4 @@
+{
+  "name": "llm-complete-json",
+  "entry": "entry.ts"
+}
