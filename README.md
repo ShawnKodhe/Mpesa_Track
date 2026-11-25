@@ -7,7 +7,7 @@ A calm, clear view of your M-Pesa money. React + Vite on the front, Supabase (Au
 - **Frontend:** React 18, Vite, Tailwind CSS, React Query
 - **Backend:** Supabase Auth, Postgres with row level security, Storage, Realtime
 - **AI:** Base44 LLM via AI Gateway (Jarvis, action parsing, M-Pesa SMS import)
-- **Email:** Resend (account confirmations, password resets, backup-email verification, budget alerts, monthly reports)
+- **Email:** Resend (account confirmations, password resets, backup-email verification, budget alerts, daily and monthly reports)
 - **Speech:** ElevenLabs (Jarvis voice replies)
 
 ## Local setup
@@ -26,7 +26,7 @@ A calm, clear view of your M-Pesa money. React + Vite on the front, Supabase (Au
    VITE_APP_URL=http://localhost:5173
    ```
 
-3. Apply the database schema. Paste `supabase/migrations/20261121000000_initial.sql`, `20261122000000_reports_and_confirmation.sql` and `20261123000000_tutorial_recovery.sql` into the Supabase SQL editor in that order, or use the CLI:
+3. Apply the database schema. Paste `supabase/migrations/20261121000000_initial.sql`, `20261122000000_reports_and_confirmation.sql`, `20261123000000_tutorial_recovery.sql` and `20261125000000_daily_report_emails.sql` into the Supabase SQL editor in that order, or use the CLI:
 
    ```bash
    supabase db push
@@ -76,7 +76,7 @@ supabase secrets set BASE44_API_KEY=your_base44_personal_access_token
 
 `MPESATRACK_REPORT_SECRET` must be the same value stored in Supabase Vault as `mpesatrack_report_secret` (see below). `APP_URL` is the public frontend URL used in email buttons.
 
-> Any API key in a local `.env` that starts with `VITE_` is embedded in the browser bundle if referenced by the app. Keep Resend, ElevenLabs and Base44 keys out of `VITE_*` entirely — set them with `supabase secrets set` as above. `.env` is gitignored, but it is not a safe place for live keys.
+> Any API key in a local `.env` that starts with `VITE_` is embedded in the browser bundle if referenced by the app. Keep Resend, ElevenLabs and Base44 keys out of `VITE_*` entirely — set them with `supabase secrets set` as above. In particular, `VITE_RESEND_API_KEY` and `VITE_RESEND_FROM_EMAIL` are ignored by Edge Functions: use the `RESEND_API_KEY` and `RESEND_FROM` secrets instead. `.env` is gitignored, but it is not a safe place for live keys.
 
 `usage-stats` returns remaining ElevenLabs characters and Base44 integration credits for the small balance line under Jarvis' chat box. The Base44 monitoring API only allows workspace owners/admins, so the personal access token must belong to one. `BASE44_WORKSPACE_ID` is detected from the token automatically; set it explicitly if you have access to several workspaces.
 
@@ -148,10 +148,10 @@ New users get a short interactive tour on their first authenticated visit. Each 
 
 ## Confirmation and scheduled reports
 
-Apply `supabase/migrations/20261122000000_reports_and_confirmation.sql` after deploying the three new functions. It enables `pg_cron`, `pg_net` and Vault, and does four things:
+Apply `supabase/migrations/20261122000000_reports_and_confirmation.sql` and `supabase/migrations/20261125000000_daily_report_emails.sql` after deploying the three new functions. The first enables `pg_cron`, `pg_net` and Vault and does four things; the second lets the delivery ledger record daily emails as well as monthly ones:
 
 1. **Resend confirmation.** An `after insert on auth.users` trigger calls `send-confirmation-email`, which sends a themed "you're in" note using the paper theme's warm off-white, deep teal and brand mark. Supabase Auth sends nothing. Google sign-ups get the same note.
-2. **Daily Jarvis digest.** `daily-report` runs at **04:00 UTC (07:00 Nairobi)**. For every user it writes one in-app `notifications` row about the previous day's spending, top categories, wallet balances and active loans. `dedupe_key = jarvis-daily-YYYY-MM-DD` makes re-runs harmless.
+2. **Daily Jarvis digest.** `daily-report` runs at **04:00 UTC (07:00 Nairobi)**. For every user it emails a themed Resend report and writes one in-app `notifications` row about the previous day's spending, top categories, wallet balances and active loans. `dedupe_key = jarvis-daily-YYYY-MM-DD` keeps the in-app row idempotent; `report_key = daily-YYYY-MM-DD` in `report_deliveries` does the same for email.
 3. **Monthly report.** `monthly-report` runs at **05:00 UTC on the 1st (08:00 Nairobi)**. It emails each user a Resend report for the month just ended: headline spend/received/net cards, category bars, a day-by-day spending chart, budget health, wallet balances, Ladder progress and a dry Jarvis verdict. The layout uses nested tables and inline styles only, so it renders in Outlook and Gmail. `report_deliveries` prevents duplicate sends.
 4. **Vault + schedules.** Two Vault secrets hold the project URL and the shared secret. Generate one long random string and use it for **both** the Supabase secret `MPESATRACK_REPORT_SECRET` and the Vault secret `mpesatrack_report_secret`:
 
@@ -176,7 +176,7 @@ select status_code, timed_out, left(content, 240) as body
   from net._http_response order by created desc limit 20;
 select owner_id, title, message from public.notifications
   where rule = 'daily' order by created_at desc limit 10;
-select * from public.report_deliveries order by sent_at desc limit 10;
+select kind, report_key, sent_at from public.report_deliveries order by sent_at desc limit 10;
 ```
 
 `pg_net` only queues the request, so a green `cron.job_run_details` row does not prove delivery — check `net._http_response` and the function logs. The daily report covers the previous calendar day in Africa/Nairobi; the monthly report covers the previous full month and deliberately excludes transfers between your own accounts.

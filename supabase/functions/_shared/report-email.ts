@@ -67,6 +67,72 @@ function jarvisNote(data: any, label: string): string {
   </td></tr>`;
 }
 
+export function dailyReportHtml(data: any): string {
+  const date = String(data.date || data.start || '');
+  const firstName = String(data.firstName || '').trim();
+  const greeting = firstName
+    ? `Hello ${esc(firstName)} — yesterday, in one glance.`
+    : 'Yesterday, in one glance.';
+
+  const statRow = `<tr><td style="padding:10px 32px 0">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+      ${statCell(k(data.spent), 'SPENT', THEME.red)}
+      <td width="12" style="font-size:0">&nbsp;</td>
+      ${statCell(k(data.received), 'RECEIVED', THEME.green)}
+      <td width="12" style="font-size:0">&nbsp;</td>
+      ${statCell(k(data.net), 'NET', data.net >= 0 ? THEME.teal : THEME.red)}
+    </tr></table>
+  </td></tr>`;
+
+  const categories = (data.byCategory || []).slice(0, 5);
+  const categoryRows = categories.length
+    ? categories.map((entry: any, index: number) => `<tr>
+        <td style="padding:9px 0 0;font-family:${THEME.body};font-size:12px;color:${THEME.ink}">${esc(entry.category)}</td>
+        <td align="right" style="padding:9px 0 0;font-family:${THEME.body};font-size:11px;color:${THEME.muted}">${k(entry.amount)} &middot; ${Math.round(Number(entry.pct) || 0)}%</td>
+      </tr><tr><td colspan="2" style="padding:4px 0 0">${progressBar(entry.pct, categoryColor(index))}</td></tr>`).join('')
+    : `<tr><td style="padding:10px 0;font-family:${THEME.body};font-size:12px;color:${THEME.muted}">No spending recorded. Admirable restraint.</td></tr>`;
+
+  const wallet = data.wallet || {};
+  const walletCells = [
+    ['M-PESA', wallet.mpesa], ['MMF', wallet.mmf], ['M-SHWARI', wallet.mshwari], ['OTHER', wallet.other],
+  ].map(([name, amount]) => `<td width="25%" align="center" style="background:${THEME.soft};border-radius:10px;padding:12px 4px">
+      <div style="font-family:${THEME.heading};font-size:14px;font-weight:700;color:${THEME.ink}">${money(amount)}</div>
+      <div style="padding-top:3px;font-family:${THEME.body};font-size:8px;font-weight:700;letter-spacing:.8px;color:${THEME.muted}">${name}</div>
+    </td>`).join('');
+
+  const note = String(data.note || '').trim();
+  const noteRow = note ? `<tr><td style="padding:20px 32px 6px">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${THEME.soft};border-left:3px solid ${THEME.teal};border-radius:8px">
+      <tr><td style="padding:16px 18px;font-family:${THEME.body};font-size:12px;line-height:1.7;color:${THEME.ink}">
+        <strong style="font-family:${THEME.heading};font-size:13px;color:${THEME.teal}">Jarvis&rsquo;s note</strong><br>${esc(note)}
+      </td></tr>
+    </table>
+  </td></tr>` : '';
+
+  const body = `
+    ${statRow}
+    ${sectionTitle('Where it went')}
+    <tr><td style="padding:8px 32px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">${categoryRows}</table></td></tr>
+
+    ${sectionTitle('Balances')}
+    <tr><td style="padding:8px 32px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>${walletCells}</tr></table></td></tr>
+    <tr><td style="padding:12px 32px 0;font-family:${THEME.body};font-size:11px;color:${THEME.muted}">
+      Total <strong style="color:${THEME.teal};font-size:13px">${k(wallet.total)}</strong> &middot; loans ${k(data.loans?.balance)} &middot; ${Number(data.transactionCount) || 0} transactions recorded
+    </td></tr>
+    ${noteRow}`;
+
+  return emailShell({
+    eyebrow: 'DAILY REPORT',
+    title: `Yesterday, ${esc(prettyDate(date))}.`,
+    intro: greeting,
+    body,
+    ctaLabel: 'Open your ledger',
+    ctaHref: data.appUrl,
+    footer: `You receive this because you have a MpesaTrack account. Figures cover ${esc(prettyDate(date))} in Nairobi time and exclude money moved between your own accounts.`,
+    preheader: `Yesterday: spent ${k(data.spent)}, received ${k(data.received)}. Jarvis has notes.`,
+  });
+}
+
 export function monthlyReportHtml(data: any): string {
   const label = String(data.label || 'Your month');
   const firstName = String(data.firstName || '').trim();
