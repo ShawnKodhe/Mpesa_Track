@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { getCurrentUser, signOut } from '@/lib/auth';
+import { clearAppLock, isAppLocked } from '@/lib/pinLock';
 
 const AuthContext = createContext();
 
@@ -16,6 +17,13 @@ export const AuthProvider = ({ children }) => {
   const checkUserAuth = useCallback(async () => {
     setIsLoadingAuth(true);
     try {
+      // A PIN-locked device keeps its Supabase session, so gate it here.
+      if (isAppLocked()) {
+        setUser(null);
+        setIsAuthenticated(false);
+        setAuthError(null);
+        return null;
+      }
       const currentUser = await getCurrentUser();
       setUser(currentUser);
       setIsAuthenticated(Boolean(currentUser));
@@ -57,6 +65,11 @@ export const AuthProvider = ({ children }) => {
     };
   }, [checkUserAuth]);
 
+  const completePinUnlock = useCallback(async () => {
+    clearAppLock();
+    await checkUserAuth();
+  }, [checkUserAuth]);
+
   const logout = useCallback(async () => {
     await signOut();
     setUser(null);
@@ -79,6 +92,7 @@ export const AuthProvider = ({ children }) => {
       appPublicSettings,
       authChecked,
       logout,
+      completePinUnlock,
       navigateToLogin,
       checkUserAuth,
       checkAppState: checkUserAuth,

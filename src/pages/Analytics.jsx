@@ -73,7 +73,7 @@ export default function Analytics() {
 
   const totalSpent = spending.reduce((s, t) => s + (t.amount || 0), 0);
   const totalIncome = income.reduce((s, t) => s + (t.amount || 0), 0);
-  const savingsRate = totalIncome > 0 ? ((totalIncome - totalSpent) / totalIncome * 100).toFixed(1) : 0;
+  const reserveRate = totalIncome > 0 ? ((totalIncome - totalSpent) / totalIncome * 100).toFixed(1) : 0;
 
   const now = new Date();
 
@@ -107,14 +107,14 @@ export default function Analytics() {
           </Card>
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <Card className={`p-5 ${parseFloat(savingsRate) >= 20 ? 'border-inflow/30 bg-inflow/5' : 'border-debt/30 bg-debt/5'}`}>
+          <Card className={`p-5 ${parseFloat(reserveRate) >= 20 ? 'border-inflow/30 bg-inflow/5' : 'border-debt/30 bg-debt/5'}`}>
             <div className="flex items-center gap-2 mb-2">
-              {parseFloat(savingsRate) >= 20 ? <CheckCircle2 className="w-4 h-4 text-inflow" /> : <AlertTriangle className="w-4 h-4 text-debt" />}
-              <p className="text-sm text-muted-foreground">Savings Rate</p>
+              {parseFloat(reserveRate) >= 20 ? <CheckCircle2 className="w-4 h-4 text-inflow" /> : <AlertTriangle className="w-4 h-4 text-debt" />}
+              <p className="text-sm text-muted-foreground">Reserves Rate</p>
             </div>
-            <p className="text-2xl font-heading font-bold text-foreground">{savingsRate}%</p>
+            <p className="text-2xl font-heading font-bold text-foreground">{reserveRate}%</p>
             <p className="text-xs text-muted-foreground mt-1">
-              {parseFloat(savingsRate) >= 20 ? 'Great job saving!' : 'Aim for 20% or more'}
+              {parseFloat(reserveRate) >= 20 ? 'Great job reserving!' : 'Aim for 20% or more'}
             </p>
           </Card>
         </motion.div>

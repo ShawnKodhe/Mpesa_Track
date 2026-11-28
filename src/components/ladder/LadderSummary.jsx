@@ -1,5 +1,5 @@
 import { fmtKES, pctOf, daysUntil } from '@/lib/ladder';
-import { totalSaved } from '@/lib/ladderBuffer';
+import { totalReserved } from '@/lib/ladderBuffer';
 
 function Tile({ label, value, sub, className = '', valueClassName = 'text-xl sm:text-2xl' }) {
   return (
@@ -15,9 +15,9 @@ function Tile({ label, value, sub, className = '', valueClassName = 'text-xl sm:
 
 export default function LadderSummary({ rungs, activeRung }) {
   // The buffer pot is one balance held at five depths, so it is counted once.
-  const saved = totalSaved(rungs);
+  const reserved = totalReserved(rungs);
   const target = rungs.reduce((sum, r) => sum + (r.target_amount || 0), 0);
-  const overall = pctOf(saved, target);
+  const overall = pctOf(reserved, target);
   const days = activeRung ? daysUntil(activeRung.target_date) : null;
   const daysLabel = days === null ? '—' : days < 0 ? 'Past due' : `${days} days`;
 
@@ -25,9 +25,9 @@ export default function LadderSummary({ rungs, activeRung }) {
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:grid-rows-2">
       <div className="col-span-2 rounded-2xl border border-border bg-card p-5 sm:p-6 lg:row-span-2">
         <p className="text-right font-heading text-3xl font-bold tabular-nums tracking-tight text-money-moved sm:text-4xl">
-          {fmtKES(saved)}
+          {fmtKES(reserved)}
         </p>
-        <p className="mt-1 text-xs text-muted-foreground">Total saved</p>
+        <p className="mt-1 text-xs text-muted-foreground">Total reserved</p>
 
         <div className="mt-5 h-2 overflow-hidden rounded-full bg-secondary">
           <div
@@ -36,7 +36,7 @@ export default function LadderSummary({ rungs, activeRung }) {
           />
         </div>
         <p className="mt-2 text-xs text-muted-foreground">
-          <span className="tabular-nums text-money-moved">{fmtKES(saved)}</span> of {fmtKES(target)} target
+          <span className="tabular-nums text-money-moved">{fmtKES(reserved)}</span> of {fmtKES(target)} target
         </p>
       </div>
 

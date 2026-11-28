@@ -143,7 +143,7 @@ export const RUNG_SEED = [
     advantages: [
       'About 7 to 8 per cent net with the state as counterparty',
       '91-day liquidity',
-      'Beats a savings account without market risk',
+      'Beats a reserve account without market risk',
     ],
   },
   {

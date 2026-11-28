@@ -6,7 +6,7 @@ import { ledgerDateKey, ledgerTodayKey } from './ledgerDates';
 /**
  * The Wallet is spendable money only:
  *   opening balance + received this month + post-cutover loan draws
- *   − consumption spending − money moved to savings − loan principal repaid
+ *   − consumption spending − money moved to reserves − loan principal repaid
  *   + reconciliation adjustments.
  *
  * Loan principal repaid is cash that left the Wallet. It is never spending, so it
@@ -18,7 +18,7 @@ import { ledgerDateKey, ledgerTodayKey } from './ledgerDates';
  * says "Opening balance not set" instead of inventing a figure.
  *
  * A loan draw is cash he can spend, so it enters the Wallet, but it is never
- * income. Savings balances held in the Ladder are never added, and money owed to
+ * income. Reserves balances held in the Ladder are never added, and money owed to
  * Shawn (DebtOwed) is never counted as cash. An adjustment is a reconciliation
  * correction: never income, never spending, only a correction to the Wallet.
  *
@@ -112,7 +112,7 @@ export function computeWallet({ transactions = [], loans = [], debts = [], snaps
     monthLabel: now.toLocaleDateString('en-KE', { month: 'long', year: 'numeric' }),
     moves: month
       .filter(isTransfer)
-      .map((transaction) => ({ name: transaction.category || transaction.recipient || 'Savings', amount: transaction.amount || 0 })),
+      .map((transaction) => ({ name: transaction.category || transaction.recipient || 'Reserves', amount: transaction.amount || 0 })),
   };
 }
 
@@ -156,7 +156,7 @@ export function walletLegs(wallet) {
     },
     {
       key: 'moved',
-      label: 'Moved to savings',
+      label: 'Moved to reserves',
       value: wallet.moved,
       sign: 'minus',
       tone: 'text-money-moved',

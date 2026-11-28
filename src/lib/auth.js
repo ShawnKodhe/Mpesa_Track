@@ -125,7 +125,24 @@ export async function completePasswordRecovery({ code, tokenHash, newPassword })
   if (error) throw error;
 }
 
-export async function signOut() {
-  const { error } = await supabase.auth.signOut({ scope: 'global' });
+/** Verify the current password, then set a new one for the signed-in user. */
+export async function changePassword(currentPassword, newPassword) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user?.email) throw new Error('You need to be signed in to change your password.');
+
+  // A fresh password sign-in checks the current password and gives the session
+  // the recent authentication Supabase needs before a password update.
+  const { error: verifyError } = await supabase.auth.signInWithPassword({
+    email: user.email,
+    password: currentPassword,
+  });
+  if (verifyError) throw new Error('Your current password is incorrect.');
+
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  if (error) throw error;
+}
+
+export async function signOut({ scope = 'global' } = {}) {
+  const { error } = await supabase.auth.signOut({ scope });
   if (error) throw error;
 }

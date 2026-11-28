@@ -10,7 +10,7 @@ import CreditUsage from '@/components/jarvis/CreditUsage';
 
 const CHIPS = ['How much can I spend today?', 'Log spending', 'How is my ladder?', 'Who owes me?'];
 const INVITATION = 'Pesa iko aje leo, sir? Uliza kitu.';
-const SPENT_KEYS = ['transactions', 'budgets', 'ladder-rungs', 'loans', 'debts-owed'];
+const SPENT_KEYS = ['transactions', 'budgets', 'ladder-rungs', 'ladder-contributions', 'loans', 'debts-owed'];
 
 const prune = (payload = {}) => Object.fromEntries(
   Object.entries(payload).filter(([, value]) => value !== '' && value !== null && value !== undefined),

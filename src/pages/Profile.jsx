@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
+import { hasPinLock, lockApp } from '@/lib/pinLock';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Camera, User, Phone, Mail, Save, LogOut, ShieldCheck, Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/lib/AuthContext';
 
 export default function Profile() {
   const [user, setUser] = useState(null);
@@ -17,6 +19,7 @@ export default function Profile() {
   const [savingBackup, setSavingBackup] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { navigateToLogin } = useAuth();
 
   useEffect(() => {
     api.auth.me().then((u) => {
@@ -207,7 +210,10 @@ export default function Profile() {
           <Button
             variant="outline"
             className="gap-2 select-none"
-            onClick={() => { queryClient.clear(); api.auth.logout(); }}
+            onClick={() => {
+              queryClient.clear();
+              if (hasPinLock()) { lockApp(); navigateToLogin(); } else api.auth.logout();
+            }}
 
           >
             <LogOut className="w-4 h-4" />

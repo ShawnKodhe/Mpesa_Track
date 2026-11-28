@@ -34,7 +34,7 @@ export default function RungDetail({ rung, contributions, monthContributed, budg
         <div className="flex items-center gap-4">
           <ProgressRing value={pct} color={complete ? 'hsl(var(--status-inflow))' : RING_COLOR[rung.type] || RING_COLOR.buffer}>
             <span className="text-base font-heading font-bold text-foreground">{Math.round(pct)}%</span>
-            <span className="text-xs text-muted-foreground">saved</span>
+            <span className="text-xs text-muted-foreground">reserved</span>
           </ProgressRing>
           <div className="min-w-0">
             <p className="text-right font-heading text-lg font-bold tabular-nums leading-tight text-money-moved">{fmtKES(rung.current_amount)}</p>

@@ -1,6 +1,9 @@
 /** The ledger changes Jarvis is allowed to propose and carry out. */
 
+import { isReserveDestination } from './reserves.ts';
+
 export const ACTION_TYPES = [
+  'move_to_reserves',
   'create_transaction',
   'update_transaction',
   'delete_transaction',
@@ -20,7 +23,7 @@ export const TRANSACTION_TYPES = [
 
 export const CATEGORIES = [
   'food', 'transport', 'utilities', 'rent', 'entertainment', 'health', 'education',
-  'savings', 'airtime', 'shopping', 'family', 'business', 'other',
+  'reserves', 'airtime', 'shopping', 'family', 'business', 'other',
   'loan principal', 'loan interest', 'loan repayment',
   'Ladder: Buffer floor', 'Ladder: Emergency fund', 'Ladder: Debt freedom',
   'Ladder: Investments', 'Ladder: Big goal',
@@ -40,8 +43,19 @@ const dateOr = (value: unknown, fallback: string) => {
   return /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : fallback;
 };
 const oneOf = (value: unknown, allowed: readonly string[]) => {
-  const raw = text(value, 60).toLowerCase();
-  return allowed.includes(raw) ? raw : null;
+  const raw = text(value, 80).toLowerCase();
+  return allowed.find((item) => item.toLowerCase() === raw) ?? null;
+};
+
+// "Savings" is the old name for reserves. Keep accepting it so older phrasing
+// still lands in the same place, and preserve custom Ladder rung labels.
+const CATEGORY_ALIASES: Record<string, string> = { savings: 'reserves' };
+const categoryOf = (value: unknown) => {
+  const raw = text(value, 80);
+  if (/^ladder:\s*\S/i.test(raw)) {
+    return `Ladder: ${raw.replace(/^ladder:\s*/i, '').trim().slice(0, 72)}`;
+  }
+  return oneOf(raw, CATEGORIES) || CATEGORY_ALIASES[raw.toLowerCase()] || null;
 };
 
 /** Everything that reaches a write path is copied field by field. */
@@ -54,16 +68,30 @@ export function sanitizeAction(raw: any, today: string) {
   let summary = text(raw.summary, 240) || `${type.replaceAll('_', ' ')}.`;
 
   switch (type) {
+    case 'move_to_reserves': {
+      const amount = positive(payload.amount ?? payload.value);
+      if (!amount) return null;
+      clean.amount = amount;
+      clean.rung_id = text(payload.rung_id, 80);
+      clean.recipient = text(payload.recipient ?? payload.destination ?? payload.rung_name, 160);
+      clean.category = categoryOf(payload.category) || 'reserves';
+      clean.description = text(payload.description ?? payload.note, 500);
+      clean.transaction_date = dateOr(payload.transaction_date ?? payload.date, today);
+      break;
+    }
     case 'create_transaction': {
       const amount = positive(payload.amount ?? payload.value);
       if (!amount) return null;
       clean.type = oneOf(payload.type, TRANSACTION_TYPES) || 'sent';
       clean.amount = amount;
       clean.recipient = text(payload.recipient ?? payload.merchant ?? payload.lender, 160);
-      clean.category = oneOf(payload.category, CATEGORIES) || 'other';
+      clean.category = categoryOf(payload.category) || 'other';
       clean.description = text(payload.description ?? payload.note, 500);
       clean.transaction_date = dateOr(payload.transaction_date ?? payload.date, today);
       clean.mpesa_ref = text(payload.mpesa_ref, 80);
+      // Reserve wording must land as a transfer: it is kept money, never income
+      // or spending, and the Wallet must see the cash leave spendable funds.
+      if (isReserveDestination(clean)) clean.type = 'transfer';
       break;
     }
     case 'update_transaction': {
@@ -78,7 +106,7 @@ export function sanitizeAction(raw: any, today: string) {
         if (payload[key] !== undefined) clean[key] = text(payload[key], 500);
       }
       if (payload.type !== undefined) clean.type = oneOf(payload.type, TRANSACTION_TYPES) || undefined;
-      if (payload.category !== undefined) clean.category = oneOf(payload.category, CATEGORIES) || undefined;
+      if (payload.category !== undefined) clean.category = categoryOf(payload.category) || undefined;
       if (payload.transaction_date !== undefined || payload.date !== undefined) {
         clean.transaction_date = dateOr(payload.transaction_date ?? payload.date, today);
       }
@@ -95,7 +123,7 @@ export function sanitizeAction(raw: any, today: string) {
       const amount = positive(payload.amount ?? payload.limit);
       if (!amount && type === 'create_budget') return null;
       if (amount) clean.amount = amount;
-      clean.category = oneOf(payload.category, CATEGORIES) || 'other';
+      clean.category = categoryOf(payload.category) || 'other';
       clean.period = oneOf(payload.period, ['weekly', 'monthly']) || 'monthly';
       if (payload.is_necessity !== undefined) clean.is_necessity = Boolean(payload.is_necessity);
       if (payload.active !== undefined) clean.active = Boolean(payload.active);

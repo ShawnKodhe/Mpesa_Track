@@ -14,7 +14,7 @@ const DEFAULT_CATEGORIES = [
   'entertainment',
   'health',
   'education',
-  'savings',
+  'reserves',
   'airtime',
   'shopping',
   'family',

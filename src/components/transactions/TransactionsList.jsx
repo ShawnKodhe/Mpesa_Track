@@ -90,7 +90,7 @@ export default function TransactionsList({ transactions, onDelete }) {
                 value={t.amount}
                 direction={direction}
                 signed
-                label={transfer ? 'moved to savings' : (t.type === 'adjustment' ? 'wallet correction' : undefined)}
+                label={transfer ? 'moved to reserves' : (t.type === 'adjustment' ? 'wallet correction' : undefined)}
                 className="text-sm shrink-0"
               />
               <ConfirmDelete

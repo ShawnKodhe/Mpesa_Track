@@ -57,7 +57,7 @@ export default function WalletBreakdown({ open, onOpenChange, wallet }) {
         )}
 
         <p className="mt-1 pb-2 text-xs text-muted-foreground">
-          Savings held in the Ladder are never added to the Wallet, and money owed to you is never counted as cash.
+          Reserves held in the Ladder are never added to the Wallet, and money owed to you is never counted as cash.
         </p>
       </SheetContent>
     </Sheet>

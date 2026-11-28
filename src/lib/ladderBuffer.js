@@ -55,8 +55,8 @@ export function withSharedBuffer(rungs, contributions) {
     : rung));
 }
 
-/** Saved money counted once: the buffer pot is added a single time. */
-export function totalSaved(rungs) {
+/** Reserved money counted once: the buffer pot is added a single time. */
+export function totalReserved(rungs) {
   let total = 0;
   let bufferCounted = false;
   rungs.forEach((rung) => {

@@ -12,8 +12,12 @@ import {
   isLoanPrincipalTransaction,
 } from '../_shared/loan-sync.ts';
 import { evaluateBudgetAlert } from '../_shared/budget-alert.ts';
+import {
+  applyReserveContribution, isReserveTransfer, pickReserveRung, rungsForUser,
+} from '../_shared/reserves.ts';
 
 const TABLES: Record<string, string> = {
+  move_to_reserves: 'transactions',
   create_transaction: 'transactions',
   update_transaction: 'transactions',
   delete_transaction: 'transactions',
@@ -28,15 +32,104 @@ const TABLES: Record<string, string> = {
 
 const label = (value: unknown) => String(value || '').trim() || 'that record';
 
+/** Credit a reserve transfer into its Ladder rung and file it under that rung. */
+async function creditReserveTransfer(
+  client: any,
+  userId: string,
+  row: any,
+  today: string,
+  preferredRung: any = null,
+) {
+  const rungs = await rungsForUser(client, userId);
+  const rung = preferredRung || pickReserveRung(rungs, row);
+  if (!rung) {
+    return { warning: 'The transfer is recorded, but no Ladder rung is set up to hold the reserve.', reserve: null };
+  }
+
+  const reserve = await applyReserveContribution(client, userId, {
+    rung,
+    rungs,
+    amount: Number(row.amount) || 0,
+    date: String(row.transaction_date || today).slice(0, 10),
+    note: String(row.description || ''),
+  });
+
+  // The money landed in a specific rung, so file the transfer under that rung's
+  // budget category. Otherwise the Ladder moves but its Budget line and the
+  // "Moved to reserves" breakdown disagree.
+  if (rung.category_label && row.id && row.category !== rung.category_label) {
+    await updateRow(client, 'transactions', row.id, { category: rung.category_label });
+    row.category = rung.category_label;
+  }
+
+  return { warning: null, reserve };
+}
+
 async function runAction(client: any, userId: string, action: any) {
   const { type, payload } = action;
   const table = TABLES[type];
   const today = ledgerTodayKey();
 
   switch (type) {
+    case 'move_to_reserves': {
+      const amount = Number(payload.amount) || 0;
+      const date = String(payload.transaction_date || today).slice(0, 10);
+      const rungs = await rungsForUser(client, userId);
+      const requestedId = String(payload.rung_id || '').trim();
+      const rung = requestedId
+        ? rungs.find((item) => String(item.id) === requestedId) || null
+        : pickReserveRung(rungs, payload);
+      if (!rung) return { response: json({ error: 'No Ladder rung is set up yet' }, 400) };
+
+      // One action owns both sides of the move: the Wallet loses the cash and
+      // the Ladder gains it. No separate contribution proposal is needed.
+      const row = await insertRow(client, 'transactions', {
+        owner_id: userId,
+        type: 'transfer',
+        amount,
+        category: rung.category_label || 'reserves',
+        recipient: String(payload.recipient || rung.name || 'Reserves'),
+        description: String(payload.description || `Transfer to ${rung.name}`),
+        transaction_date: date,
+      });
+
+      let warning = null;
+      let reserve = null;
+      try {
+        const credited = await creditReserveTransfer(client, userId, row, today, rung);
+        warning = credited.warning;
+        reserve = credited.reserve;
+      } catch (error) {
+        console.error('jarvisAct reserve move failed:', error);
+        warning = 'The transfer is recorded, but the reserve balance could not be updated.';
+      }
+
+      const credited = reserve ? ` KES ${money(amount)} is now in ${label(rung.name)}.` : '';
+      return {
+        entity: 'Transaction',
+        id: row.id,
+        receipt: `Recorded KES ${money(amount)} moved to reserves. Wallet reduced and Ladder updated.${credited}${warning ? ` ${warning}` : ''}`,
+      };
+    }
+
     case 'create_transaction': {
       const row = await insertRow(client, 'transactions', { ...payload, owner_id: userId });
       let warning = null;
+      let reserve = null;
+
+      // A transfer into reserves is kept money, not spending. Credit the Ladder
+      // too, otherwise the Wallet drops while the reserve total stays put.
+      if (isReserveTransfer(row)) {
+        try {
+          const credited = await creditReserveTransfer(client, userId, row, today);
+          warning = credited.warning;
+          reserve = credited.reserve;
+        } catch (error) {
+          console.error('jarvisAct reserve credit failed:', error);
+          warning = 'The transfer is recorded, but the reserve balance could not be updated.';
+        }
+      }
+
       if (isLoanDrawTransaction(row)) {
         const draw = await applyLoanDraw(client, userId, {
           lender: row.recipient, amount: row.amount, date: row.transaction_date, note: row.description,
@@ -50,7 +143,10 @@ async function runAction(client: any, userId: string, action: any) {
         }
       }
       try { await evaluateBudgetAlert(row.id, userId); } catch { /* never block a write */ }
-      const receipt = `Recorded KES ${money(row.amount)} ${row.type} ${label(row.recipient)}.${warning ? ` ${warning}` : ''}`;
+      const credited = reserve
+        ? ` KES ${money(row.amount)} is now in ${label(reserve.rung.name)}.`
+        : '';
+      const receipt = `Recorded KES ${money(row.amount)} ${row.type} ${label(row.recipient)}.${credited}${warning ? ` ${warning}` : ''}`;
       return { entity: 'Transaction', id: row.id, receipt };
     }
 
@@ -59,6 +155,20 @@ async function runAction(client: any, userId: string, action: any) {
       if (response) return { response };
       const row = await updateRow(client, 'transactions', payload.id, payload);
       let warning = null;
+      let credited = '';
+
+      // A row turned into a reserve transfer must also move the Ladder balance.
+      if (isReserveTransfer(row) && !isReserveTransfer(before)) {
+        try {
+          const result = await creditReserveTransfer(client, userId, row, today);
+          warning = result.warning;
+          if (result.reserve) credited = ` KES ${money(row.amount)} is now in ${label(result.reserve.rung.name)}.`;
+        } catch (error) {
+          console.error('jarvisAct reserve credit failed:', error);
+          warning = 'The transfer is recorded, but the reserve balance could not be updated.';
+        }
+      }
+
       const amountChanged = Number(before.amount) !== Number(row.amount);
       const recipientChanged = String(before.recipient || '') !== String(row.recipient || '');
       if ((isLoanDrawTransaction(row)) && (amountChanged || recipientChanged)) {
@@ -74,7 +184,7 @@ async function runAction(client: any, userId: string, action: any) {
       return {
         entity: 'Transaction',
         id: row.id,
-        receipt: `Updated the ${label(row.category)} transaction of KES ${money(row.amount)}.${warning ? ` ${warning}` : ''}`,
+        receipt: `Updated the ${label(row.category)} transaction of KES ${money(row.amount)}.${credited}${warning ? ` ${warning}` : ''}`,
       };
     }
 
@@ -106,29 +216,43 @@ async function runAction(client: any, userId: string, action: any) {
     }
 
     case 'create_contribution': {
-      let rungId = String(payload.rung_id || '').trim();
-      if (!rungId) {
-        const { data: first } = await client.from('ladder_rungs').select('id')
-          .eq('owner_id', userId).order('order', { ascending: true }).limit(1);
-        rungId = first?.[0]?.id || '';
+      const amount = Number(payload.amount) || 0;
+      const rungs = await rungsForUser(client, userId);
+      const requestedId = String(payload.rung_id || '').trim();
+      let rung = null;
+      if (requestedId) {
+        rung = rungs.find((item) => String(item.id) === requestedId) || null;
+        if (!rung) return { response: json({ error: 'That Ladder rung was not found' }, 404) };
+      } else {
+        rung = pickReserveRung(rungs, payload);
       }
-      if (!rungId) return { response: json({ error: 'No Ladder rung is set up yet' }, 400) };
-      const { record: rung, response: rungResponse } = await loadOwnedRecord(client, 'ladder_rungs', rungId, userId);
-      if (rungResponse) return { response: rungResponse };
+      if (!rung) return { response: json({ error: 'No Ladder rung is set up yet' }, 400) };
 
-      const row = await insertRow(client, 'ladder_contributions', {
-        ...payload,
-        rung_id: rung.id,
-        contribution_date: payload.contribution_date || today,
+      const { contribution } = await applyReserveContribution(client, userId, {
+        rung,
+        rungs,
+        amount,
+        date: String(payload.contribution_date || today).slice(0, 10),
+        note: String(payload.note || ''),
+      });
+
+      // Mirror the Ladder screen: the reserve goes up and the Wallet goes down.
+      await insertRow(client, 'transactions', {
         owner_id: userId,
+        type: 'transfer',
+        amount,
+        category: rung.category_label || 'reserves',
+        recipient: rung.name || 'Reserves',
+        description: contribution.note
+          ? `${rung.name} — ${contribution.note}`
+          : `Ladder contribution: ${rung.name}`,
+        transaction_date: contribution.contribution_date,
       });
-      await updateRow(client, 'ladder_rungs', rung.id, {
-        current_amount: (Number(rung.current_amount) || 0) + (Number(row.amount) || 0),
-      });
+
       return {
         entity: 'LadderContribution',
-        id: row.id,
-        receipt: `KES ${money(row.amount)} added to ${label(rung.name)}.`,
+        id: contribution.id,
+        receipt: `KES ${money(amount)} added to ${label(rung.name)}.`,
       };
     }
 

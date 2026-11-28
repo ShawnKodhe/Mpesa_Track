@@ -3,7 +3,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { LILY_VOICE } from '@/hooks/useJarvisVoice';
 
 const LANGUAGES = [
   { value: 'auto', label: 'Auto (your mix)', short: 'Auto' },
@@ -14,7 +13,6 @@ const LANGUAGES = [
 export default function JarvisVoiceControls({ voice }) {
   const current = LANGUAGES.find((language) => language.value === voice.lang) || LANGUAGES[0];
   const voices = voice.voices || [];
-  const isLily = voice.voiceId === LILY_VOICE;
 
   return (
     <Popover>
@@ -68,11 +66,6 @@ export default function JarvisVoiceControls({ voice }) {
                 ))}
               </SelectContent>
             </Select>
-            <p className="text-[11px] leading-snug text-muted-foreground">
-              {isLily
-                ? 'Spoken by ElevenLabs — Lily is delightfully unimpressed: scoffs, long pauses and bored asides.'
-                : 'Spoken by ElevenLabs — Charlie speaks like someone across the desk: throat clears, hmm sounds, pauses and dry asides.'}
-            </p>
           </div>
         )}
 

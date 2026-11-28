@@ -148,10 +148,10 @@ export default function Ladder() {
         confetti({ particleCount: 140, spread: 90, origin: { y: 0.7 } });
         toast({ title: 'Rung complete', description: `${targetRung.name} is done — the next rung is unlocked.` });
       } else {
-        toast({ title: 'Contribution saved', description: `${fmtKES(amount)} added to ${targetRung.name}.` });
+        toast({ title: 'Contribution reserved', description: `${fmtKES(amount)} added to ${targetRung.name}.` });
       }
     } catch (error) {
-      toast({ title: 'Could not save', description: error.message, variant: 'destructive' });
+      toast({ title: 'Could not reserve', description: error.message, variant: 'destructive' });
     } finally {
       setSaving(false);
     }
@@ -266,7 +266,7 @@ export default function Ladder() {
             <TrendingUp className="w-6 h-6 text-primary" />
           </div>
           <p className="text-sm text-muted-foreground">
-            Your ladder starts empty. Add a rung for whatever you are saving towards — a buffer, a debt to clear, or an investment — then add more as you go.
+            Your ladder starts empty. Add a rung for whatever you are reserving for — a buffer, a debt to clear, or an investment — then add more as you go.
           </p>
           <Button onClick={() => openFor(null, setEditOpen)}>
             <Plus className="mr-1.5 h-4 w-4" aria-hidden="true" />

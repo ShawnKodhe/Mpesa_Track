@@ -104,7 +104,7 @@ export const CATEGORY_LABELS = {
   entertainment: 'Entertainment',
   health: 'Health',
   education: 'Education',
-  savings: 'Savings',
+  reserves: 'Reserves',
   airtime: 'Airtime',
   shopping: 'Shopping',
   family: 'Family',

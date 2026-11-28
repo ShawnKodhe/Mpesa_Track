@@ -101,5 +101,5 @@ export function transferDestination(transaction) {
       || transaction.recipient
       || 'Ladder';
   }
-  return category || transaction?.recipient || 'Savings';
+  return category || transaction?.recipient || 'Reserves';
 }

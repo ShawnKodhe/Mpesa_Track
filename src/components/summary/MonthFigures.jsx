@@ -42,7 +42,7 @@ export default function MonthFigures({ allocated = 0, spent = 0, moved = 0, move
           note={<p className="mt-1 text-xs text-muted-foreground">Consumption only</p>}
         />
         <Figure
-          label="Moved to savings"
+          label="Moved to reserves"
           value={moved}
           icon={Landmark}
           tone="text-money-moved"
@@ -76,7 +76,7 @@ export default function MonthFigures({ allocated = 0, spent = 0, moved = 0, move
           KES {cashLeft.toLocaleString()}
         </span>
         <span className="text-xs text-muted-foreground">
-          Money in, less spending, less transfers. Goods bought on credit count as spending but never left the Wallet, so they are not in this figure.
+          Money in, less spending, less transfers, less loan principal repaid. Goods bought on credit count as spending but never left the Wallet, so they are not in this figure.
         </span>
       </div>
     </div>

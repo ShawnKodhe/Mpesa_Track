@@ -53,7 +53,7 @@ const STEPS = [
     emoji: '🪜',
     eyebrow: 'The long game',
     title: 'Ladder',
-    body: 'Break big savings goals into rungs. It starts empty on purpose — add your first rung when you have something worth climbing towards.',
+    body: 'Break big reserve goals into rungs. It starts empty on purpose — add your first rung when you have something worth climbing towards.',
     task: 'Tiny task: tap Ladder to see your rungs.',
   },
   {

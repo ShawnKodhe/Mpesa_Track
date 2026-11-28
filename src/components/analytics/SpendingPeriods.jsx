@@ -55,7 +55,7 @@ export default function SpendingPeriods({ transactions = [], now = new Date() })
         {describeLedgerRange(active.range)} · {countLabel}
         {movedInRange > 0 && (
           <span className="text-money-moved">
-            {' '}· KES {movedInRange.toLocaleString()} moved to savings, not spending
+            {' '}· KES {movedInRange.toLocaleString()} moved to reserves, not spending
           </span>
         )}
       </p>

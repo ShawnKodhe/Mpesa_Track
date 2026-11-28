@@ -57,7 +57,7 @@ export default function WalletCard({ wallet, reconciliations = [], onOpen, onRec
         <p className={`mt-5 text-right font-heading text-4xl font-bold tabular-nums tracking-tight sm:text-5xl ${walletTone(wallet.wallet)}`}>
           {kes(animatedWallet)}
         </p>
-        <p className="mt-1 text-right text-xs text-muted-foreground">Spendable this month, savings held apart</p>
+        <p className="mt-1 text-right text-xs text-muted-foreground">Spendable this month, reserves held apart</p>
 
         <div className="mt-4 space-y-1.5 border-t border-border pt-3">
           {walletLegs(wallet).map((leg) => (

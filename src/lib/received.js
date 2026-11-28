@@ -10,7 +10,7 @@ import {
 
 /**
  * Money actually received: a 'received' (or 'deposit') record that is not a
- * savings transfer and not a loan draw. Both Analytics and the Dashboard read
+ * reserves transfer and not a loan draw. Both Analytics and the Dashboard read
  * money in through this one function, so the two can never disagree.
  */
 export function isReceipt(transaction) {

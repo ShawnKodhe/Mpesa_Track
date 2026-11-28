@@ -35,42 +35,18 @@ export function looksSwahili(text = '') {
   return words.some((word) => SWAHILI_WORDS.includes(word));
 }
 
-/** ElevenLabs "Charlie" — a personified, dry, deadpan delivery with human mannerisms. */
+/** ElevenLabs "Charlie" — a plain-spoken male voice. */
 export const JARVIS_VOICE = 'IKne3meq5aSn9XLyUdCD';
-/** ElevenLabs "Lily" — bored, faintly condescending, with scoffs and long pauses. */
+/** ElevenLabs "Lily" — a plain-spoken female voice. */
 export const LILY_VOICE = 'pFZP5JQG7iQjIQuC4Bku';
 export const VOICE_EN = JARVIS_VOICE;
 export const VOICE_SW = JARVIS_VOICE;
 
 export const JARVIS_VOICES = [
-  { id: 'auto', label: 'Auto (Charlie)' },
-  { id: JARVIS_VOICE, label: 'Jarvis — Charlie (dry & sarcastic)' },
-  { id: LILY_VOICE, label: 'Jarvis — Lily (bored & demeaning)' },
+  { id: 'auto', label: 'Auto' },
+  { id: JARVIS_VOICE, label: 'Charlie (male)' },
+  { id: LILY_VOICE, label: 'Lily (female)' },
 ];
-
-/** Remember the model/voice that worked, per selected voice, to avoid retries. */
-const SPEECH_PROFILE_KEY = 'mpesatrack-speech-profile';
-
-function readSpeechProfiles() {
-  if (typeof window === 'undefined') return {};
-  try {
-    const parsed = JSON.parse(window.localStorage.getItem(SPEECH_PROFILE_KEY) || '{}');
-    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
-  } catch {
-    return {};
-  }
-}
-
-function rememberSpeechProfile(selectedVoice, model, usedVoice) {
-  if (typeof window === 'undefined' || !model || !usedVoice) return;
-  try {
-    const profiles = readSpeechProfiles();
-    profiles[selectedVoice] = { voiceId: usedVoice, model };
-    window.localStorage.setItem(SPEECH_PROFILE_KEY, JSON.stringify(profiles));
-  } catch {
-    // Storage disabled: the function simply discovers the combination again.
-  }
-}
 
 export default function useJarvisVoice() {
   const [lang, setLang] = useState('auto');
@@ -257,7 +233,6 @@ export default function useJarvisVoice() {
     const chosen = voiceId === 'auto'
       ? (wantsSwahili ? VOICE_SW : VOICE_EN)
       : voiceId;
-    const preferred = readSpeechProfiles()[chosen] || {};
 
     stopAudio();
     setNote('');
@@ -268,8 +243,6 @@ export default function useJarvisVoice() {
         voiceId: chosen,
         // The function refuses to synthesise without this explicit opt-in.
         speakEnabled: true,
-        preferredVoice: preferred.voiceId || undefined,
-        preferredModel: preferred.model || undefined,
       });
       if (response?.error) {
         // supabase-js puts a generic message on FunctionsHttpError; the useful
@@ -289,19 +262,9 @@ export default function useJarvisVoice() {
       }
       const audio = response?.data?.audio;
       if (!audio) throw new Error(response?.data?.error || 'No audio came back');
-      rememberSpeechProfile(chosen, response.data.model, response.data.voiceId);
-      const isLily = chosen === LILY_VOICE;
-      const selectedName = isLily ? 'Lily' : 'Charlie';
-      const mannerisms = isLily ? 'scoffs, long pauses and bored asides' : 'throat clears, hmm sounds and dry asides';
       if (response?.data?.usedFallback) {
-        const reason = String(response.data.voiceError || '').toLowerCase();
-        if (/model/.test(reason)) {
-          setNote(`Your ElevenLabs plan cannot use expressive models — using plain multilingual speech. Upgrade to hear ${mannerisms}.`);
-        } else {
-          setNote(`${selectedName} was unavailable (${String(response.data.voiceError || 'not available').slice(0, 100)}) — using Baxter, the dry Aussie fallback.`);
-        }
-      } else if (response?.data?.plainSpeech || (response?.data?.model && !/^eleven_v[34]/i.test(response.data.model))) {
-        setNote(`Using plain multilingual speech — an expressive model is needed for ${mannerisms}.`);
+        const reason = String(response.data.voiceError || 'not available').slice(0, 100);
+        setNote(`That voice was unavailable (${reason}) — using the fallback voice.`);
       }
       const element = new Audio(`data:audio/mpeg;base64,${audio}`);
       audioRef.current = element;

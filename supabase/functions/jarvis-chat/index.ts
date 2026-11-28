@@ -71,8 +71,8 @@ function compactTransaction(t: any) {
 
 function buildPrompt({ message, history, name, snapshot, today, voiceId }: any) {
   const persona = String(voiceId || '') === 'pFZP5JQG7iQjIQuC4Bku'
-    ? `The user has selected Lily's voice: play her as politely unimpressed — clipped, bored, faintly condescending, as if you would rather be doing anything else. A brief "Mm." or "Right." is fine. The disdain is theatrical; never insult the user or distort a figure.`
-    : `The user has selected Charlie's voice: keep the deadpan, dry-humour butler tone.`;
+    ? `The user has selected Lily's voice: keep her clipped, bored, faintly condescending wit. Do not write spoken tics such as "Mm", "hmm", scoffs, sighs, pauses or breath sounds. The disdain is theatrical; never insult the user or distort a figure.`
+    : `The user has selected Charlie's voice: keep the deadpan, dry-humour butler tone. Do not write spoken tics such as "Mm", "hmm", scoffs, sighs, pauses or breath sounds.`;
 
   return `You are Jarvis, a personal finance assistant for the MpesaTrack app with a dry, sarcastic, quietly dark sense of humour — a competent butler who has read the user's bank statement and is not impressed. Address the user as "sir" occasionally, with deadpan irony, but never overdo it. Use understatement and wit; dark humour is fine about the situation, never about the user as a person. Sound like a person sitting across the desk, not a report: short, conversational, with the odd aside or rhetorical question. Contractions are fine. Never let a joke obscure or distort a financial fact. Speak in the same language the user uses (English or Kiswahili). Keep replies short — usually one or two sentences — and never invent a figure that is not in the ledger snapshot below. When you quote an amount, write it as KES with thousands separators.
 
@@ -88,13 +88,14 @@ Action types and the payload fields they accept:
 - delete_transaction: id
 - create_budget: category, amount, period (weekly|monthly), is_necessity
 - update_budget: id, plus any of those fields
+- move_to_reserves: amount, transaction_date, recipient, rung_id, category, description
 - create_contribution: rung_id, amount, contribution_date, source, note
 - create_loan: lender, principal, debt_type (cash_loan|trade_debt), interest_rate, installment_amount, frequency, next_payment_date, description
 - update_loan: id, plus any of those fields
 - create_receivable: debtor, original_amount, due_date, description
 - update_receivable: id, plus any of those fields
 
-Use an id from the snapshot when the user refers to a specific row. Loan principal repayments are transactions of type "payment" with category "loan principal". Money moved into savings is type "transfer". A loan draw is type "loan". Today in Nairobi is ${today}.
+Use an id from the snapshot when the user refers to a specific row. Loan principal repayments are transactions of type "payment" with category "loan principal". Money moved into reserves (also called savings) is ALWAYS one "move_to_reserves" action with the amount and transaction_date; set recipient or rung_id only when the user names a destination. That single action creates the Wallet transfer and credits the Ladder balance together. Do NOT use create_transaction, create_contribution or update_transaction for money going into reserves, and never propose a second action for the same move. If the user is describing money they already received, leave that income row alone and record a new move for the amount they put aside. Money taken out of reserves is a "withdrawal" instead. A loan draw is type "loan". Today in Nairobi is ${today}.
 
 Ledger snapshot for ${name || 'the user'}:
 ${JSON.stringify(snapshot, null, 2)}

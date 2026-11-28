@@ -7,7 +7,7 @@ import { loanDrawsOf, receiptsOf, receivedGroups } from '@/lib/received';
 import { sumAmount } from '@/lib/transfers';
 
 /**
- * Money received this month, in the Wallet card's visual family. Savings
+ * Money received this month, in the Wallet card's visual family. Reserves
  * transfers and loan draws are never part of the headline figure: a draw is
  * borrowed money, so it gets its own muted line instead.
  */
@@ -45,7 +45,7 @@ export default function ReceivedCard({ transactions = [], now = new Date() }) {
             {kes(total)}
           </p>
           <p className="mt-1 text-right text-xs text-muted-foreground">
-            Money in this month, savings and loans held apart
+            Money in this month, reserves and loans held apart
           </p>
 
           {groups.length > 0 && (

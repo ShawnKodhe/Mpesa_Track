@@ -1,6 +1,6 @@
 import { computeCeiling } from './budgetCeiling';
 import {
-  isCashSpending, isConsumption, isIncome, isLoanDraw, isTransfer, sumAmount, transferDestination,
+  isCashSpending, isConsumption, isIncome, isLoanDraw, isLoanPrincipal, isTransfer, sumAmount, transferDestination,
 } from './transfers';
 import { ledgerDateKey, ledgerTodayKey } from './ledgerDates';
 
@@ -28,6 +28,9 @@ export function summarizeMonth({ transactions = [], budgets = [], rungs = [], no
   const moved = sumAmount(transfers);
   const received = sumAmount(month.filter(isIncome));
   const draws = sumAmount(month.filter(isLoanDraw));
+  // Principal repayments leave the Wallet but are never consumption, so they
+  // are a separate leg here just as they are in the Wallet breakdown.
+  const principalRepaid = sumAmount(month.filter(isLoanPrincipal));
 
   const byDestination = {};
   transfers.forEach((transaction) => {
@@ -47,7 +50,8 @@ export function summarizeMonth({ transactions = [], budgets = [], rungs = [], no
     movedLines,
     received,
     draws,
-    cashLeft: received + draws - spentCash - moved,
+    principalRepaid,
+    cashLeft: received + draws - spentCash - moved - principalRepaid,
     ceiling,
   };
 }

@@ -49,7 +49,7 @@
     /* Money direction — every amount is green, red or teal, nothing else */
     --money-in: 148 61% 47%;           /* #2FBF71 money in */
     --money-out: 0 84% 69%;            /* #F26D6D warm red, readable on the navy */
-    --money-moved: 179 78% 42%;        /* #17BEBB teal: moved to savings */
+    --money-moved: 179 78% 42%;        /* #17BEBB teal: moved to reserves */
 
     --chart-1: 234 100% 71%;
     --chart-2: 179 78% 42%;
@@ -200,7 +200,7 @@ html.paper {
   /* Money direction on warm paper: deeper red for contrast */
   --money-in: 134 61% 30%;           /* #1E7B34 money in */
   --money-out: 4 71% 41%;            /* #B3261E deep red on off-white */
-  --money-moved: 178 76% 25%;        /* #0F6E6B teal: moved to savings */
+  --money-moved: 178 76% 25%;        /* #0F6E6B teal: moved to reserves */
 
   --chart-1: 17 88% 40%;
   --chart-2: 178 76% 25%;

@@ -4,7 +4,7 @@ import { isAdjustment, isCreditPurchase, isLoanDraw, isTransfer, isIncome } from
  * One rule for every amount in the app:
  *   in    — money received (green)
  *   out   — money consumed or paid out (red)
- *   moved — money kept, moved to savings (teal, never spending, never income)
+ *   moved — money kept, moved to reserves (teal, never spending, never income)
  */
 export const MONEY_TONE = {
   in: 'text-money-in',

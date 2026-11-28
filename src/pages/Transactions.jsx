@@ -231,7 +231,7 @@ export default function Transactions() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Categories</SelectItem>
-            {Array.from(new Set([...['food','transport','utilities','rent','entertainment','health','education','savings','airtime','shopping','family','business','other'], ...budgetCategories])).map(c => (
+            {Array.from(new Set([...['food','transport','utilities','rent','entertainment','health','education','reserves','airtime','shopping','family','business','other'], ...budgetCategories])).map(c => (
               <SelectItem key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</SelectItem>
             ))}
           </SelectContent>

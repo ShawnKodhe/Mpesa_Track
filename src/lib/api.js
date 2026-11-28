@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import {
+  changePassword,
   completePasswordRecovery,
   getCurrentUser,
   resetPasswordRequest,
@@ -258,12 +259,13 @@ export const api = {
   auth: {
     me: getCurrentUser,
     updateMe,
-    logout: signOut,
+    logout: (options) => signOut(options),
     redirectToLogin: (returnTo = '/') => {
       window.location.href = `/login?returnTo=${encodeURIComponent(returnTo)}`;
     },
     loginViaEmailPassword: signIn,
     loginWithProvider: (_provider, returnTo) => signInWithGoogle(returnTo),
+    changePassword,
     register: signUp,
     resetPasswordRequest,
     resetPassword: completePasswordRecovery,

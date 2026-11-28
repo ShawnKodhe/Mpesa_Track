@@ -4,7 +4,7 @@ import { completeJson } from '../_shared/ai.ts';
 const TYPES = ['sent', 'received', 'payment', 'withdrawal', 'deposit', 'airtime', 'transfer'];
 const CATEGORIES = [
   'food', 'transport', 'utilities', 'rent', 'entertainment', 'health', 'education',
-  'savings', 'airtime', 'shopping', 'family', 'business', 'other',
+  'reserves', 'airtime', 'shopping', 'family', 'business', 'other',
 ];
 
 Deno.serve(async (req) => {
@@ -20,7 +20,7 @@ Deno.serve(async (req) => {
     if (messages.length > 20000) return json({ error: 'Too much text to parse at once' }, 400);
 
     const prompt = `Parse these M-Pesa SMS messages and extract transaction data. For each message, determine:
-- type: one of "sent", "received", "payment", "withdrawal", "deposit", "airtime", "transfer". Use "transfer" for money moved into the user's own savings: M-Shwari, Britam MMF, or any Ladder rung.
+- type: one of "sent", "received", "payment", "withdrawal", "deposit", "airtime", "transfer". Use "transfer" for money moved into the user's own reserves: M-Shwari, Britam MMF, or any Ladder rung.
 - amount: the transaction amount in KES (number only)
 - recipient: who the money was sent to or received from
 - category: best guess from: ${CATEGORIES.join(', ')}. For a transfer into a Ladder rung use the exact rung category, e.g. "Ladder: Buffer floor"

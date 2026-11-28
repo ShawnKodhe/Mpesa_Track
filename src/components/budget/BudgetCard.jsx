@@ -10,11 +10,11 @@ import ConfirmDelete from '@/components/shared/ConfirmDelete';
 
 export default function BudgetCard({ budget, spent, moved = 0, onDelete, onEdit, onToggle }) {
   const isActive = budget.active !== false;
-  const isSavingsLine = (budget.category || '').startsWith('Ladder: ');
+  const isReserveLine = (budget.category || '').startsWith('Ladder: ');
   // On a Ladder line the funding is what was moved in, plus any stray payment,
   // and neither of them is ever added to the app's spending totals.
-  const movedTotal = isSavingsLine ? Number(moved) || 0 : 0;
-  const used = isSavingsLine ? movedTotal + spent : spent;
+  const movedTotal = isReserveLine ? Number(moved) || 0 : 0;
+  const used = isReserveLine ? movedTotal + spent : spent;
   const percentage = budget.amount > 0 ? Math.min((used / budget.amount) * 100, 100) : 0;
   const remaining = budget.amount - used;
   const isOver = isActive && remaining < 0;
@@ -64,10 +64,10 @@ export default function BudgetCard({ budget, spent, moved = 0, onDelete, onEdit,
         </div>
         <Progress
           value={percentage}
-          className={`h-2 mb-3 ${isOver ? '[&>div]:bg-money-out' : isWarning ? '[&>div]:bg-debt' : isSavingsLine ? '[&>div]:bg-money-moved' : '[&>div]:bg-inflow'}`}
+          className={`h-2 mb-3 ${isOver ? '[&>div]:bg-money-out' : isWarning ? '[&>div]:bg-debt' : isReserveLine ? '[&>div]:bg-money-moved' : '[&>div]:bg-inflow'}`}
         />
         <div className="flex items-center justify-between gap-3 text-sm">
-          {isSavingsLine ? (
+          {isReserveLine ? (
             <span className="text-muted-foreground">
               <span className="font-medium tabular-nums text-money-moved">Moved {movedTotal.toLocaleString()}</span>
               {spent > 0 && (
@@ -81,8 +81,8 @@ export default function BudgetCard({ budget, spent, moved = 0, onDelete, onEdit,
               {' '}of <span className="tabular-nums">KES {budget.amount.toLocaleString()}</span>
             </span>
           )}
-          <span className={`text-right font-medium tabular-nums ${isOver ? 'text-money-out' : isSavingsLine ? 'text-muted-foreground' : 'text-inflow'}`}>
-            {isSavingsLine
+          <span className={`text-right font-medium tabular-nums ${isOver ? 'text-money-out' : isReserveLine ? 'text-muted-foreground' : 'text-inflow'}`}>
+            {isReserveLine
               ? remaining > 0
                 ? `${remaining.toLocaleString()} still to be funded`
                 : remaining < 0

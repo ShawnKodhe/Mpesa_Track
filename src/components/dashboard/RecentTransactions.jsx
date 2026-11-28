@@ -62,7 +62,7 @@ export default function RecentTransactions({ transactions }) {
                   value={t.amount}
                   direction={direction}
                   signed
-                  label={transfer ? 'moved to savings' : undefined}
+                  label={transfer ? 'moved to reserves' : undefined}
                   className="text-sm shrink-0"
                 />
               </div>

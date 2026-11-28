@@ -83,7 +83,7 @@ export default function ContributionSheet({ open, onOpenChange, rung, onSubmit, 
             disabled={!valid || saving}
             onClick={() => onSubmit({ amount: value, date, note: note.trim() })}
           >
-            {saving ? 'Saving…' : 'Save contribution'}
+            {saving ? 'Reserving…' : 'Reserve contribution'}
           </Button>
         </div>
       </SheetContent>
